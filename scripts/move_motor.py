@@ -175,7 +175,7 @@ if __name__ == '__main__':
                 pub.publish(True)
                 print('Slikano na kutu br. ' + str(angle))
                 time.sleep(2)
-                height_old=height                       # bilježenje zastarjele Visine
+                height_old=height                       # bilježenje zastarjele visine
             value_old=value_old                         # bilježenje zastarjelog kuta
         if tag == 0:
             tag = 1
