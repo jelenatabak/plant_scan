@@ -91,9 +91,11 @@ class Trans():
 class Move_motors():
 
     def pose_callback(self, data): #napomena: krivo postavljeni self.id, ispravljeno
-        if self.id == 2 :
+        if self.id == 3 :
             self.actual_position = data.dynamixel_state[0].present_position
-        elif self.id == 3 :
+        elif self.id == 2 :
+            self.actual_position = data.dynamixel_state[2].present_position
+        elif self.id == 1 :
             self.actual_position = data.dynamixel_state[1].present_position
         self.offset = abs(self.actual_position - self.goal_position)
 
@@ -122,12 +124,15 @@ class Move_motors():
         self.move_motor(self.command, self.id, self.addr_name, value)
         while self.offset > 10 :
             time.sleep(0.001)
-        time.sleep(1)
+        #time.sleep(1) maknuo da bi ubrzao pokretanja
+            
         print(self.actual_position, self.goal_position)
 
 
     def calc_h(self, min_h, max_h, num_of_h):  #min_h u cm, max_h u cm, num_of_h broj visina za slikanje
-        return int(((max_h-min_h/7.54)*4096)/(num_of_h-1)) #napomena: za preniske pozicije nit se odmota i počne ponovo namotavati (yo-yo efekt), dodana minimalna visina kako bi se to spriječilo
+        print(int((((max_h-min_h)/(2.4*math.pi))*4096)/(num_of_h-1)))
+        return int((((max_h-min_h)/(2.4*math.pi))*4096)/(num_of_h-1)) #2.4 je promjer kolotura
+        #napomena: za preniske pozicije nit se odmota i počne ponovo namotavati (yo-yo efekt), dodana minimalna visina kako bi se to spriječilo
 
     def calc_a(self, num_of_photo):    #broj slika po rotaciji
         return int((math.pi*2*4096)/num_of_photo) #napomena: umjesto originalnih 6.5, koristimo 2*math.pi
@@ -140,14 +145,16 @@ if __name__ == '__main__':
         rospy.init_node('motor_position')
         m1 = Move_motors('command', 3, 'Goal_Position', 0)
         m2 = Move_motors('command', 2, 'Goal_Position', 0)
+        m3 = Move_motors('command', 1, 'Goal_Position', 0)
         pub = rospy.Publisher('/ready', Bool, queue_size = 1)
-        num_of_h = 4        # broj visina na kojima ce se slikati
+        num_of_h = 8        # broj visina na kojima ce se slikati
         num_of_photo = 7    # broj slika po jednoj rotaciji
         max_h = 50          # najviša točka u cm do koje će ići kamera, max je 70cm
         min_h = 30          # najniža točka u cm do koje će ići kamera, stvarni min je 0 cm, preporuča se 10 cm
         tag = 0
         time.sleep(2)
-
+        
+        ang = 0                             # nagib kamere
         elev = 0                            # trenutna vertikalna pozicija kamere
         rad = 32                            # radijus okvira skenera - napomena: ponovo izmjeriti
         height_old = max_h                  # 'stara' visina; za slučaj da se kamera spušta, uzima se najviša točka
@@ -167,20 +174,25 @@ if __name__ == '__main__':
                 # računanje nove visine - koristi se varijabla elev za računanje pozicije kamere
                 if tag == 0:
                     elev = (m1.calc_h(min_h, max_h, num_of_h) * (height))
+                    ang = int((1024/(num_of_h-1))*height - 512)
+                    
                 else:
                     elev = (m1.calc_h(min_h, max_h, num_of_h) * (num_of_h-height-1))
+                    ang = int((-1024/(num_of_h-1))*height + 512)
                 cam_pose.vert(height_old, height)       # računanje nove visine
                 m1.move(elev)                           # pomak na novu visinu
+                m3.move(ang)                            # promjena nagiba kamere
                 cam_pose.cam()                          # slanje nove pozicije
                 pub.publish(True)
                 print('Slikano na kutu br. ' + str(angle))
+                print("tag" , tag)
                 time.sleep(2)
                 height_old=height                       # bilježenje zastarjele visine
             value_old=value_old                         # bilježenje zastarjelog kuta
-        if tag == 0:
-            tag = 1
-        else:
-            tag = 0
+            if tag == 0:
+                tag = 1
+            else:
+                tag = 0
         m1.move(0)
         m2.move(0)
         # računanje transformacije za povratak na početnu poziciju
