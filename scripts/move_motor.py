@@ -148,9 +148,9 @@ if __name__ == '__main__':
         m3 = Move_motors('command', 1, 'Goal_Position', 0)
         pub = rospy.Publisher('/ready', Bool, queue_size = 1)
         num_of_h = 8        # broj visina na kojima ce se slikati
-        num_of_photo = 7    # broj slika po jednoj rotaciji
+        num_of_photo = 10    # broj slika po jednoj rotaciji
         max_h = 50          # najviša točka u cm do koje će ići kamera, max je 70cm
-        min_h = 30          # najniža točka u cm do koje će ići kamera, stvarni min je 0 cm, preporuča se 10 cm
+        min_h = 40          # najniža točka u cm do koje će ići kamera, stvarni min je 0 cm, preporuča se 10 cm
         tag = 0
         time.sleep(2)
         
@@ -174,11 +174,11 @@ if __name__ == '__main__':
                 # računanje nove visine - koristi se varijabla elev za računanje pozicije kamere
                 if tag == 0:
                     elev = (m1.calc_h(min_h, max_h, num_of_h) * (height))
-                    ang = int((1024/(num_of_h-1))*height - 512)
+                    ang = int(((1024/(num_of_h-1))*height - 512)*(max_h-min_h)/70)
                     
                 else:
                     elev = (m1.calc_h(min_h, max_h, num_of_h) * (num_of_h-height-1))
-                    ang = int((-1024/(num_of_h-1))*height + 512)
+                    ang = int(((-1024/(num_of_h-1))*height + 512)*(max_h-min_h)/70)
                 cam_pose.vert(height_old, height)       # računanje nove visine
                 m1.move(elev)                           # pomak na novu visinu
                 m3.move(ang)                            # promjena nagiba kamere
