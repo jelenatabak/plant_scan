@@ -70,14 +70,14 @@ class cloudModel{
         {
           ros::Time time_cloud = input.header.stamp;
           pcl::fromROSMsg (input, cloud);
-//          boost::shared_ptr<dynamixel_workbench_msgs::DynamixelStateList const> sharedPtr;
-//          dynamixel_workbench_msgs::DynamixelStateList state;
+          boost::shared_ptr<dynamixel_workbench_msgs::DynamixelStateList const> sharedPtr;
+          dynamixel_workbench_msgs::DynamixelStateList state;
 
-//          sharedPtr = ros::topic::waitForMessage<dynamixel_workbench_msgs::DynamixelStateList>("/m1");
-//          state = *sharedPtr;
+          sharedPtr = ros::topic::waitForMessage<dynamixel_workbench_msgs::DynamixelStateList>("/m1");
+          state = *sharedPtr;
 
-//          double angle = state.dynamixel_state[0].present_position*T*PI/180;
-//          double z_move = 0.5-state.dynamixel_state[1].present_position/H;
+          double angle = state.dynamixel_state[0].present_position*T*PI/180;
+          double z_move = 0.5-state.dynamixel_state[1].present_position/H;
 
           cout << "vert: " << vert+1 << endl;
           cout << "angle: " << angle*180/PI << endl;
@@ -109,13 +109,6 @@ class cloudModel{
           cloud_archive.push_back(tf_cloud);
           cout << "Archive size: " << cloud_archive.size() << endl;
 
-          vert += 1;
-
-          if (vert == 8)
-          {
-            vert = 0.0;
-            angle += PI/6;
-          }
         }
         if (cloud_archive.size() == 64 && flag_model == 0)
         {
